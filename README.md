@@ -35,7 +35,7 @@ below.*
 
 ## Установка
 
-### Способ 1 — как плагин (терминальный Claude Code)
+### Способ 1 — терминальный Claude Code (две команды)
 
 ```
 /plugin marketplace add MegaPromter/reglament-plugin
@@ -44,7 +44,25 @@ below.*
 
 Вызов мастера после установки: `/reglament:reglament-setup`
 
-### Способ 2 — вручную папкой (работает везде, включая десктоп-приложение)
+### Способ 2 — десктоп-приложение Claude Code
+
+Вариант А — через меню: кнопка **«+»** рядом с полем ввода →
+**Plugins** → **Add plugin** → найти каталог/плагин.
+
+Вариант Б — одним сообщением ассистенту. Скопируйте и отправьте
+своему Claude:
+
+> Подключи мне плагин reglament: в файл `~/.claude/settings.json`
+> добавь в `extraKnownMarketplaces` запись
+> `"megapromter-plugins": {"source": {"source": "github", "repo":
+> "MegaPromter/reglament-plugin"}}`, а в массив `enabledPlugins` —
+> элемент `{"marketplace": "megapromter-plugins", "plugin":
+> "reglament"}`. Существующие настройки не затирай. Потом скажи
+> мне перезапустить приложение.
+
+После перезапуска мастер доступен как `/reglament:reglament-setup`.
+
+### Способ 3 — вручную папкой (работает везде, без плагинов)
 
 1. Скачайте этот репозиторий (Code → Download ZIP).
 2. Скопируйте папку `plugins/reglament/skills/reglament-setup` в
