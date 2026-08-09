@@ -1,8 +1,8 @@
 # Reglament — система управления разработкой для работы с ИИ
 
-*Development management system for AI-assisted coding. The wizard's
-dialogue and generated files are in Russian — see English summary
-below.*
+*Development management system for AI-assisted coding. The wizard
+asks for your preferred language at the start and runs the whole
+dialogue — and generates all files — in it. English summary below.*
 
 ## Что это
 
@@ -26,6 +26,8 @@ below.*
 
 Особенности мастера:
 
+- в начале спрашивает язык — весь диалог и все создаваемые файлы
+  ведутся на языке пользователя;
 - каждый принцип и каждый файл согласуется с пользователем по
   очереди — ничего не создаётся без подтверждения;
 - каждый вопрос сопровождается пояснением: что это, зачем
@@ -92,8 +94,9 @@ documentation vault with a workflow reglament and per-task notes
 linked to commits, AI memory files for session continuity, and a
 per-task procedure skill (`/reglament`). Every principle and file is
 confirmed with the user one by one; a safety check prevents running
-the wizard on an already-configured project. **The wizard dialogue
-and generated files are currently in Russian.**
+the wizard on an already-configured project. The wizard asks for
+your preferred language at the start and conducts the dialogue and
+all generated files in it.
 
 Install: `/plugin marketplace add MegaPromter/reglament-plugin`,
 then `/plugin install reglament@megapromter-plugins`, run
