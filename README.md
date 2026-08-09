@@ -48,21 +48,32 @@ dialogue — and generates all files — in it. English summary below.*
 
 ### Способ 2 — десктоп-приложение Claude Code
 
-Вариант А — через меню: кнопка **«+»** рядом с полем ввода →
-**Plugins** → **Add plugin** → найти каталог/плагин.
+**Через встроенный каталог (окно Directory → Plugins) этот плагин
+найти НЕЛЬЗЯ**: там показываются только плагины Anthropic и
+партнёров. Сторонние каталоги подключаются правкой файла настроек.
 
-Вариант Б — одним сообщением ассистенту. Скопируйте и отправьте
-своему Claude:
+Скопируйте и отправьте своему Claude:
 
-> Подключи мне плагин reglament: в файл `~/.claude/settings.json`
-> добавь в `extraKnownMarketplaces` запись
-> `"megapromter-plugins": {"source": {"source": "github", "repo":
-> "MegaPromter/reglament-plugin"}}`, а в массив `enabledPlugins` —
-> элемент `{"marketplace": "megapromter-plugins", "plugin":
-> "reglament"}`. Существующие настройки не затирай. Потом скажи
-> мне перезапустить приложение.
+> Подключи мне плагин reglament. В файле `~/.claude/settings.json`
+> (Windows: `C:\Users\<имя>\.claude\settings.json`) добавь, не
+> затирая существующие настройки:
+>
+> ```json
+> "extraKnownMarketplaces": {
+>   "megapromter-plugins": {
+>     "source": { "source": "github", "repo": "MegaPromter/reglament-plugin" }
+>   }
+> },
+> "enabledPlugins": {
+>   "reglament@megapromter-plugins": true
+> }
+> ```
+>
+> Потом скажи мне перезапустить приложение.
 
-После перезапуска мастер доступен как `/reglament:reglament-setup`.
+**Обязательно перезапустите Claude Code** — плагин подхватывается
+при старте. После перезапуска мастер доступен как
+`/reglament:reglament-setup`.
 
 ### Способ 3 — вручную папкой (работает везде, без плагинов)
 
