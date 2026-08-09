@@ -1,0 +1,19 @@
+{
+  "name": "megapromter-plugins",
+  "owner": {
+    "name": "MegaPromter",
+    "url": "https://github.com/MegaPromter"
+  },
+  "description": "Plugins by MegaPromter",
+  "plugins": [
+    {
+      "name": "reglament",
+      "source": "./plugins/reglament",
+      "description": "Development management system for AI-assisted projects (setup wizard, Russian dialogue)",
+      "displayName": "Reglament — система управления разработкой"
+    }
+  ],
+  "metadata": {
+    "pluginRoot": "./plugins"
+  }
+}
