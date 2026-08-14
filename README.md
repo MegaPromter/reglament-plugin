@@ -17,7 +17,14 @@ dialogue — and generates all files — in it. English summary below.*
 - **Память ИИ** — конспекты ассистента и файл текущего статуса для
   преемственности сессий;
 - **Проектный навык `/reglament`** — процедура ведения задачи:
-  заметка → согласование → код → тесты → коммит → закрытие.
+  заметка → согласование → код → тесты → коммит → закрытие;
+- **Слой принуждения** (по выбору пользователя, с v1.1) — табло
+  задачи и хуки-перехватчики: правка кода блокируется до
+  одобрения заметки, коммит — без ссылки на документацию или при
+  красных тестах; одобрение ставит только пользователь (штамп
+  кнопкой Run — работа продолжается сама, писать в чат не надо);
+  закрытие задачи делает скрипт. Держится на скриптах, а не на
+  дисциплине языковой модели.
 
 Зачем: у ИИ-ассистента ограниченное контекстное окно и нет памяти
 между сессиями. Эта система выносит память в файлы — новая сессия
@@ -91,7 +98,8 @@ dialogue — and generates all files — in it. English summary below.*
 В папке нового проекта вызовите мастер и отвечайте на вопросы.
 Мастер проведёт по шагам: обзор системы → опрос о проекте → устав →
 принципы регламента (по одному) → структура документации → память
-ИИ → проектный навык задач → вопрос об автоматизации (хук) → итог.
+ИИ → уровень принуждения и проектный навык задач → хуки
+принуждения (если выбраны) → итог.
 
 Дальнейшие задачи в настроенном проекте начинаются командой
 `/reglament` — она ведёт задачу по процедуре до коммита.
@@ -103,9 +111,15 @@ wizard that bootstraps a file-based memory system for AI-assisted
 development in a new project: a project charter (`CLAUDE.md`), a
 documentation vault with a workflow reglament and per-task notes
 linked to commits, AI memory files for session continuity, and a
-per-task procedure skill (`/reglament`). Every principle and file is
-confirmed with the user one by one; a safety check prevents running
-the wizard on an already-configured project. The wizard asks for
+per-task procedure skill (`/reglament`). Since v1.1 the wizard can
+also install an optional enforcement layer: a machine-readable task
+board plus hooks that physically block code edits before the note
+is approved, commits without a documentation link, and commits with
+failing tests; approval is stamped only by the user (one click on
+Run — work resumes automatically), and task closing is scripted.
+Every principle and file is confirmed with the user one by one; a
+safety check prevents running the wizard on an already-configured
+project. The wizard asks for
 your preferred language at the start and conducts the dialogue and
 all generated files in it.
 
