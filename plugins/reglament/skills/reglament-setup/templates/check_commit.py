@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# reglament-plugin v{{ВЕРСИЯ_ПЛАГИНА}}
 """Хук-контролёр коммита (PreToolUse на Bash).
 
 Читает JSON вызова инструмента из stdin. Пропускает всё, кроме:

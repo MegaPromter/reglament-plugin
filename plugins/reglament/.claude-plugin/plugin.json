@@ -1,7 +1,7 @@
 {
   "name": "reglament",
   "description": "Development management system for AI-assisted projects: a setup wizard that creates a project charter (CLAUDE.md), documentation vault with a workflow reglament, AI memory files and a per-task procedure skill. Multilingual: the wizard asks your preferred language at the start. / Мастер настройки системы управления разработкой для работы с ИИ-ассистентом.",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "author": {
     "name": "MegaPromter",
     "url": "https://github.com/MegaPromter"

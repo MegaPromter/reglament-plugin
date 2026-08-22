@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# reglament-plugin v{{ВЕРСИЯ_ПЛАГИНА}}
 """Валидатор vault — формальные проверки регламента.
 
 Запуск: python .claude/hooks/validate_vault.py
