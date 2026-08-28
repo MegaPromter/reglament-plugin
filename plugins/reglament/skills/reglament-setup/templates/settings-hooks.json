@@ -19,6 +19,23 @@
         ]
       },
       {
+        "matcher": "PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-commit-tests.sh\"",
+            "timeout": 300,
+            "statusMessage": "Запуск тестов перед коммитом..."
+          },
+          {
+            "type": "command",
+            "command": "python -X utf8 \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_commit.py\"",
+            "timeout": 60,
+            "statusMessage": "Контроль регламента (ссылка на vault, штамп)..."
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write",
         "hooks": [
           {
