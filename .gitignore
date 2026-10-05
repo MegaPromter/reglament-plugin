@@ -1,0 +1,9 @@
+# Мусор исполнения
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# Журналы
+*.log
