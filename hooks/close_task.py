@@ -7,8 +7,8 @@
 Малая форма:   вставляет строку в журнал мелких правок — и коммитит.
 Перед коммитом гоняет валидатор vault; после — очищает табло.
 
-Запуск (полная):  python .claude/hooks/close_task.py [--hash abc1234]
-Запуск (малая):   python .claude/hooks/close_task.py --desc "что сделано" \
+Запуск (полная):  python .reglament/hooks/close_task.py [--hash abc1234]
+Запуск (малая):   python .reglament/hooks/close_task.py --desc "что сделано" \
                   --files "какие файлы" [--hash abc1234]
 Без --hash берётся последний коммит (HEAD).
 """
@@ -27,7 +27,7 @@ for _поток in (sys.stdout, sys.stderr):
         _поток.reconfigure(encoding="utf-8")
 
 КОРЕНЬ = Path(__file__).resolve().parents[2]
-ТАБЛО = КОРЕНЬ / ".claude" / "task-state.json"
+ТАБЛО = КОРЕНЬ / ".reglament" / "task-state.json"
 ЖУРНАЛ = КОРЕНЬ / "docs" / "vault" / "задачи" / "Мелкие правки (журнал).md"
 
 
@@ -101,19 +101,9 @@ def main():
         изменён = путь
         сообщение = f"docs(vault): закрытие задачи «{имя}» — хэш {хэш}, статус сделано"
 
-    # Замер усилия (effort) — строка в журнал замеров; свой файл
-    # скрипт называет сам, сорвать закрытие задачи он не может.
+    # Замер усилия больше не ведётся: он читал стенограммы прежней среды,
+    # которых в ДСХ нет (vault «Журнал замеров усилия»).
     изменены = [изменён]
-    з = subprocess.run(
-        [sys.executable, str(Path(__file__).with_name("effort_log.py"))],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-    )
-    print(з.stdout, end="")
-    for с in (з.stdout or "").splitlines():
-        if с.startswith("ЖУРНАЛ: "):
-            изменены.append(КОРЕНЬ / с.removeprefix("ЖУРНАЛ: ").strip())
 
     # Валидатор — закрывать можно только чистый vault.
     в = subprocess.run(

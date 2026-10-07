@@ -19,11 +19,10 @@
 
 | Папка здесь | Что это | Куда разворачивается в ПРИЗМЕ |
 |---|---|---|
-| `hooks/` | правила-проверки регламента (Python и shell) | `.claude/hooks/` |
+| `hooks/` | правила-проверки регламента (Python и shell) | `.reglament/hooks/` |
 | `plugin/` | сторож: ворота правок, карточка согласования, конец хода | `.dsh/plugin-reglament/` |
 | `skills/reglament/` | навык процедуры задачи (`/reglament`) | `.dsh/skills/reglament/` |
 | `skills/memory-cleanup/` | навык уборки памяти | `.dsh/skills/memory-cleanup/` |
-| `skills/claude-code/reglament/` | близнец навыка для прежней среды (Claude Code) | `.claude/skills/reglament/` |
 | `tools/` | свои инструменты ДСХ: коммит, закрытие задачи, склад проверок, измеритель памяти, сборка слоя пресета | `.dsh/tools/` |
 
 Навык `poligon-health` (проверка стенда) и разведочные остатки ДСХ

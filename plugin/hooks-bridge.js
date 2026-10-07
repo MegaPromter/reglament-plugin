@@ -1,15 +1,15 @@
-// Слой совместимости: вызов хуков регламента Claude Code из ДСХ.
+// Слой совместимости: вызов хуков регламента прежняя среда из ДСХ.
 //
-// Правила НЕ переписываются. Тот же самый скрипт `.claude/hooks/*`, тот же вход
+// Правила НЕ переписываются. Тот же самый скрипт `.reglament/hooks/*`, тот же вход
 // (JSON на стандартный ввод), тот же выход (код 2 — запрет, объяснение в потоке
 // ошибок). Разница платформ — только в четырёх местах, и все здесь:
-//   1. имена инструментов: у ДСХ строчные (`write`, `pwsh`), у Claude с большой
+//   1. имена инструментов: у ДСХ строчные (`write`, `pwsh`), у прежней среды с большой
 //      буквы (`Write`, `PowerShell`);
-//   2. `transcript_path`: у ДСХ стенограммы в формате Claude нет, поэтому путь
+//   2. `transcript_path`: у ДСХ стенограммы в формате прежней среды нет, поэтому путь
 //      пустой, а согласование живёт в табло (штамп ставит модуль approval.js);
-//   3. конец хода: у Claude это событие `Stop`, у ДСХ — `agent/turn-stopping`
+//   3. конец хода: у прежней среды это событие `Stop`, у ДСХ — `agent/turn-stopping`
 //      (слушателя зовёт index.js, возврат ассистента делает `agent.steer`);
-//   4. команда коммита: у Claude это `git commit`, у ДСХ — свой инструмент
+//   4. команда коммита: у прежней среды это `git commit`, у ДСХ — свой инструмент
 //      (`python .dsh/tools/git_commit.py …`), и её надо перевести в понятный
 //      правилам вид — иначе ворота тестов и проверка ссылки на заметку молчат
 //      (`перевестиКомандуКоммита` ниже).
@@ -18,7 +18,7 @@
 
 import { randomUUID } from 'node:crypto';
 
-/** Соответствие имён инструментов ДСХ именам Claude Code. */
+/** Соответствие имён инструментов ДСХ именам прежняя среда. */
 export const ИМЯ_ИНСТРУМЕНТА = {
   write: 'Write',
   edit: 'Edit',
@@ -106,7 +106,7 @@ export function собратьPayload({
 }) {
   return {
     session_id: сессия,
-    transcript_path: '', // у ДСХ стенограммы Claude нет — согласование в табло
+    transcript_path: '', // у ДСХ стенограмм прежней среды нет — согласование в табло
     cwd: корень,
     hook_event_name: событие,
     tool_name: ИМЯ_ИНСТРУМЕНТА[инструмент] ?? инструмент,
@@ -116,37 +116,37 @@ export function собратьPayload({
 }
 
 /**
- * Хуки, которые Claude Code зовёт ПЕРЕД вызовом, — в том же порядке, что задан
- * в `.claude/settings.json` (порядок важен: тесты и ссылка на vault идут до
+ * Хуки, которые прежняя среда зовёт ПЕРЕД вызовом, — в том же порядке, что задан
+ * в `.reglament/settings.json` (порядок важен: тесты и ссылка на vault идут до
  * проверки оболочки).
  */
 export function хукиПередВызовом(инструмент) {
   const имя = ИМЯ_ИНСТРУМЕНТА[инструмент] ?? инструмент;
   if (имя === 'Bash' || имя === 'PowerShell') {
     return [
-      { скрипт: '.claude/hooks/pre-commit-tests.sh', тип: 'sh' },
-      { скрипт: '.claude/hooks/check_commit.py', тип: 'py' },
-      { скрипт: '.claude/hooks/gate_shell.py', тип: 'py' },
+      { скрипт: '.reglament/hooks/pre-commit-tests.sh', тип: 'sh' },
+      { скрипт: '.reglament/hooks/check_commit.py', тип: 'py' },
+      { скрипт: '.reglament/hooks/gate_shell.py', тип: 'py' },
     ];
   }
   if (имя === 'Write' || имя === 'Edit') {
-    return [{ скрипт: '.claude/hooks/gate_edit.py', тип: 'py' }];
+    return [{ скрипт: '.reglament/hooks/gate_edit.py', тип: 'py' }];
   }
   return [];
 }
 
-/** Хуки, которые Claude Code зовёт ПОСЛЕ вызова. */
+/** Хуки, которые прежняя среда зовёт ПОСЛЕ вызова. */
 export function хукиПослеВызова(инструмент, аргументы) {
   const имя = ИМЯ_ИНСТРУМЕНТА[инструмент] ?? инструмент;
   if (имя === 'Bash' || имя === 'PowerShell') {
-    return [{ скрипт: '.claude/hooks/gate_shell.py', тип: 'py' }];
+    return [{ скрипт: '.reglament/hooks/gate_shell.py', тип: 'py' }];
   }
   if (имя === 'Write' || имя === 'Edit') {
     const путь = String(аргументы?.file_path ?? '').toLowerCase();
     const список = [];
     if (путь.endsWith('.py'))
-      список.push({ скрипт: '.claude/hooks/post-edit-python.sh', тип: 'sh' });
-    if (путь.endsWith('.js')) список.push({ скрипт: '.claude/hooks/post-edit-js.sh', тип: 'sh' });
+      список.push({ скрипт: '.reglament/hooks/post-edit-python.sh', тип: 'sh' });
+    if (путь.endsWith('.js')) список.push({ скрипт: '.reglament/hooks/post-edit-js.sh', тип: 'sh' });
     return список;
   }
   return [];
@@ -167,9 +167,9 @@ export function решениеПоХуку({ код, stderr = '', stdout = '' })
   return { блок: false };
 }
 
-// ── конец хода (у Claude — Stop, у ДСХ — agent/turn-stopping) ────────────────
+// ── конец хода (у прежней среды — Stop, у ДСХ — agent/turn-stopping) ────────────────
 
-/** Имя события Claude Code «ассистент закончил ход». */
+/** Имя события прежняя среда «ассистент закончил ход». */
 export const СОБЫТИЕ_ОСТАНОВКИ = 'Stop';
 
 /** Пометка сторожа: по ней в переписке видно, что это не слова пользователя. */
@@ -179,12 +179,12 @@ export const ПОМЕТКА_СТОРОЖА = '[сторож регламента
 export const ИСТОЧНИК_СТОРОЖА = { kind: 'reglament' };
 
 /**
- * Хуки конца хода — тот же состав, что у Claude Code в `.claude/settings.json`
+ * Хуки конца хода — тот же состав, что у прежняя среда в `.reglament/settings.json`
  * (раздел `Stop`). Список здесь один, чтобы «какие проверки стоят на конце
  * хода» читалось в одном месте.
  */
 export function хукиОстановки() {
-  return [{ скрипт: '.claude/hooks/check_turn_end.py', тип: 'py' }];
+  return [{ скрипт: '.reglament/hooks/check_turn_end.py', тип: 'py' }];
 }
 
 /**
@@ -195,7 +195,7 @@ export function хукиОстановки() {
  * @param {string} параметры.корень — папка проекта (идёт в `cwd`)
  * @param {string} [параметры.сессия] — идентификатор сессии ДСХ
  * @param {boolean} [параметры.активен] — ход уже разворачивали в этом ходу
- *   (`stop_hook_active` у Claude): правило на это смотрит и второй раз отступает
+ *   (`stop_hook_active` у прежней среды): правило на это смотрит и второй раз отступает
  * @param {string} [параметры.последняяРеплика] — чем закончил ассистент
  *   (нужен для исключения «ход закончился вопросом»)
  * @returns {object} полезная нагрузка хука
@@ -208,7 +208,7 @@ export function собратьPayloadОстановки({
 }) {
   return {
     session_id: сессия,
-    transcript_path: '', // стенограммы Claude у ДСХ нет — согласование в табло
+    transcript_path: '', // стенограмм прежней среды у ДСХ нет — согласование в табло
     cwd: корень,
     hook_event_name: СОБЫТИЕ_ОСТАНОВКИ,
     stop_hook_active: активен === true,

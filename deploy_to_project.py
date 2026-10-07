@@ -34,12 +34,11 @@ for _поток in (sys.stdout, sys.stderr):
 НАБОРЫ = (
     (
         "hooks",
-        ".claude/hooks",
+        ".reglament/hooks",
         (
             "check_commit.py",
             "check_turn_end.py",
             "close_task.py",
-            "effort_log.py",
             "gate_edit.py",
             "gate_shell.py",
             "post-edit-js.sh",
@@ -56,7 +55,7 @@ for _поток in (sys.stdout, sys.stderr):
             "canary.js",
             "canary.mjs",
             "card-guard.js",
-            "claude-hooks.js",
+            "hooks-bridge.js",
             "cordis.patch.yml",
             "index.js",
             "package.json",
@@ -81,7 +80,6 @@ for _поток in (sys.stdout, sys.stderr):
 ОДИНОЧНЫЕ = (
     ("skills/reglament/SKILL.md", ".dsh/skills/reglament/SKILL.md"),
     ("skills/memory-cleanup/SKILL.md", ".dsh/skills/memory-cleanup/SKILL.md"),
-    ("skills/claude-code/reglament/SKILL.md", ".claude/skills/reglament/SKILL.md"),
 )
 
 
@@ -113,8 +111,8 @@ def main() -> int:
     доводы = разбор.parse_args()
 
     проект = Path(доводы.target)
-    if not (проект / ".claude").is_dir():
-        print(f"Не похоже на проект ПРИЗМА: {проект} (нет папки .claude)")
+    if not (проект / ".reglament").is_dir():
+        print(f"Не похоже на проект ПРИЗМА: {проект} (нет папки .reglament)")
         return 1
 
     нет_в_проекте = []

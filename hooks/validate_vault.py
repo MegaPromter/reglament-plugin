@@ -2,7 +2,7 @@
 # reglament-plugin v1.4.0
 """Валидатор vault — формальные проверки регламента.
 
-Запуск: python .claude/hooks/validate_vault.py
+Запуск: python .reglament/hooks/validate_vault.py
 Выход: 0 — нарушений нет (предупреждения допустимы); 1 — есть нарушения.
 
 Нарушения (валят коммит):

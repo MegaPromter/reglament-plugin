@@ -7,8 +7,8 @@ if [ -z "$FILE_PATH" ]; then
 fi
 # Предпочитаем ruff из venv проекта — та же версия, что в requirements-dev
 RUFF="ruff"
-if [ -x "${CLAUDE_PROJECT_DIR:-.}/venv/Scripts/ruff.exe" ]; then
-  RUFF="${CLAUDE_PROJECT_DIR:-.}/venv/Scripts/ruff.exe"
+if [ -x "${REGLAMENT_PROJECT_DIR:-.}/venv/Scripts/ruff.exe" ]; then
+  RUFF="${REGLAMENT_PROJECT_DIR:-.}/venv/Scripts/ruff.exe"
 fi
 "$RUFF" check "$FILE_PATH" 2>&1
 exit 0

@@ -37,7 +37,7 @@ for _поток in (sys.stdin, sys.stdout, sys.stderr):
         _поток.reconfigure(encoding="utf-8")
 
 КОРЕНЬ = Path(
-    os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2]
+    os.environ.get("REGLAMENT_PROJECT_DIR") or Path(__file__).resolve().parents[2]
 )
 VAULT = КОРЕНЬ / "docs" / "vault"
 МЕТКИ_ИСКЛЮЧЕНИЯ = ("косметика", "линтер", "опечатка", "откат")
@@ -64,7 +64,7 @@ def несогласованный_код(данные, файлы, извест
     задача = табло.get("задача")
     if not задача:
         return None
-    код = [ф for ф in файлы if not ф.lower().startswith(("docs/", ".claude/"))]
+    код = [ф for ф in файлы if not ф.lower().startswith(("docs/", ".reglament/"))]
     if известен and not код:
         return None
     if задача_согласована(табло, данные.get("transcript_path")):

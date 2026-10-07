@@ -5,7 +5,7 @@
 // хуков, перевод ответа хука в решение, разбор ответа карточки, штамп табло,
 // конец хода (вход «Stop», ответ хука, сообщение сторожа), предохранитель от
 // петли и ворота карточки согласования (проект заметки показывается первым).
-// Сами правила живут в `.claude/hooks/*` и здесь не дублируются.
+// Сами правила живут в `.reglament/hooks/*` и здесь не дублируются.
 
 import assert from 'node:assert/strict';
 
@@ -22,7 +22,7 @@ import {
   хукиОстановки,
   хукиПередВызовом,
   хукиПослеВызова,
-} from './claude-hooks.js';
+} from './hooks-bridge.js';
 import { ВАРИАНТ_СОГЛАСИЯ, найтиСогласие, разобратьОтвет, штампСогласования } from './approval.js';
 import { ТЕКСТ_ОТКАЗА, карточкаСогласования, проектПоказан, учётПоказа } from './card-guard.js';
 import { учётВозвратов } from './stop-guard.js';
@@ -135,23 +135,23 @@ function случай(имя, проверка) {
   assert.equal(payload.tool_input.content, 'путь .dsh/tools/git_commit.py в тексте');
 });
 
-// ── состав и порядок хуков (как в .claude/settings.json) ────────────────────
+// ── состав и порядок хуков (как в .reglament/settings.json) ────────────────────
 случай('для оболочки три хука в правильном порядке', () => {
   const список = хукиПередВызовом('pwsh').map((х) => х.скрипт);
   assert.deepEqual(список, [
-    '.claude/hooks/pre-commit-tests.sh',
-    '.claude/hooks/check_commit.py',
-    '.claude/hooks/gate_shell.py',
+    '.reglament/hooks/pre-commit-tests.sh',
+    '.reglament/hooks/check_commit.py',
+    '.reglament/hooks/gate_shell.py',
   ]);
 });
 случай('для правки файла — gate_edit', () => {
   assert.deepEqual(
     хукиПередВызовом('write').map((х) => х.скрипт),
-    ['.claude/hooks/gate_edit.py'],
+    ['.reglament/hooks/gate_edit.py'],
   );
   assert.deepEqual(
     хукиПередВызовом('edit').map((х) => х.скрипт),
-    ['.claude/hooks/gate_edit.py'],
+    ['.reglament/hooks/gate_edit.py'],
   );
 });
 случай('для чтения хуков нет', () => {
@@ -160,16 +160,16 @@ function случай(имя, проверка) {
 случай('после оболочки — gate_shell', () => {
   assert.deepEqual(
     хукиПослеВызова('pwsh', {}).map((х) => х.скрипт),
-    ['.claude/hooks/gate_shell.py'],
+    ['.reglament/hooks/gate_shell.py'],
   );
 });
 случай('после правки .py — проверка питона', () => {
   const список = хукиПослеВызова('write', { file_path: 'apps/api/x.py' }).map((х) => х.скрипт);
-  assert.deepEqual(список, ['.claude/hooks/post-edit-python.sh']);
+  assert.deepEqual(список, ['.reglament/hooks/post-edit-python.sh']);
 });
 случай('после правки .js — проверка JS', () => {
   const список = хукиПослеВызова('write', { file_path: 'static/js/x.js' }).map((х) => х.скрипт);
-  assert.deepEqual(список, ['.claude/hooks/post-edit-js.sh']);
+  assert.deepEqual(список, ['.reglament/hooks/post-edit-js.sh']);
 });
 случай('после правки .md — проверок нет', () => {
   assert.deepEqual(хукиПослеВызова('write', { file_path: 'DSH_NOTES.md' }), []);
@@ -268,7 +268,7 @@ const вопросы = [{ id: 'ok', question: `Согласовать замет
 случай('на конце хода стоит правило незавершённых шагов', () => {
   assert.deepEqual(
     хукиОстановки().map((х) => х.скрипт),
-    ['.claude/hooks/check_turn_end.py'],
+    ['.reglament/hooks/check_turn_end.py'],
   );
 });
 случай('вход конца хода несёт событие, признак и последнюю реплику', () => {

@@ -15,7 +15,7 @@ if ! echo "$TOOL_INPUT" | grep -q "git commit"; then
   exit 0
 fi
 
-cd "$CLAUDE_PROJECT_DIR"
+cd "$REGLAMENT_PROJECT_DIR"
 
 # Архитектурные контракты (import-linter) — первым: прогон ~2 с,
 # конфиг в pyproject.toml (vault «Архитектурные контракты
