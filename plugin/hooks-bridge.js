@@ -146,7 +146,8 @@ export function хукиПослеВызова(инструмент, аргум�
     const список = [];
     if (путь.endsWith('.py'))
       список.push({ скрипт: '.reglament/hooks/post-edit-python.sh', тип: 'sh' });
-    if (путь.endsWith('.js')) список.push({ скрипт: '.reglament/hooks/post-edit-js.sh', тип: 'sh' });
+    if (путь.endsWith('.js'))
+      список.push({ скрипт: '.reglament/hooks/post-edit-js.sh', тип: 'sh' });
     return список;
   }
   return [];
