@@ -60,6 +60,7 @@ sys.exit(0)
 
 СЛУЧАЕВ = 0
 ПРОВАЛЫ: list[str] = []
+ПРОПУЩЕНО: list[str] = []
 
 
 def случай(имя: str):
@@ -185,6 +186,31 @@ def закрыть_хуком(корень: Path, *аргументы: str, ср
     """Закрытие близнецом прежней среды."""
     return _запустить(
         корень / ".reglament" / "hooks" / "close_task.py", корень, *аргументы, среда=среда
+    )
+
+
+def _bash() -> str | None:
+    """bash для `.sh`-хуков: как у сторожа — Git for Windows, иначе из PATH."""
+    явный = Path(r"C:\Program Files\Git\bin\bash.exe")
+    if явный.is_file():
+        return str(явный)
+    return shutil.which("bash")
+
+
+def _запустить_sh(скрипт: Path, корень: Path, данные: dict):
+    """Хук `.sh` отдельным процессом; нет bash — None (о пропуске скажем вслух)."""
+    bash = _bash()
+    if bash is None:
+        return None
+    return subprocess.run(
+        [bash, скрипт.as_posix()],
+        input=json.dumps(данные, ensure_ascii=False),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(корень),
+        env=_окружение(корень),
     )
 
 
@@ -324,9 +350,49 @@ def _():
         assert "не применены миграции" in вывод(итог), вывод(итог)
 
 
+@случай("post-edit-python: вход разбирается, проверка не молчит")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = Path(временная)
+        файл = корень / "проба.py"
+        файл.write_text("def f(:\n", encoding="utf-8")
+        итог = _запустить_sh(
+            КОРЕНЬ / "hooks" / "post-edit-python.sh",
+            корень,
+            {"tool_input": {"file_path": str(файл)}},
+        )
+        if итог is None:
+            ПРОПУЩЕНО.append("post-edit-python: bash не найден")
+            return
+        assert "не разобран" not in вывод(итог), f"вход хука не разобран: {вывод(итог)}"
+        assert вывод(итог).strip(), "хук промолчал: проверка после правки слепа"
+
+
+@случай("post-edit-js: вход разбирается, проверка не молчит")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = Path(временная)
+        файл = корень / "проба.js"
+        файл.write_text("function f( {\n", encoding="utf-8")
+        итог = _запустить_sh(
+            КОРЕНЬ / "hooks" / "post-edit-js.sh",
+            корень,
+            {"tool_input": {"file_path": str(файл)}},
+        )
+        if итог is None:
+            ПРОПУЩЕНО.append("post-edit-js: bash не найден")
+            return
+        assert "не разобран" not in вывод(итог), f"вход хука не разобран: {вывод(итог)}"
+        assert вывод(итог).strip(), "хук промолчал: проверка после правки слепа"
+
+
 # ── итог ──────────────────────────────────────────────────────────────────
 
-print(f"пройдено случаев: {СЛУЧАЕВ - len(ПРОВАЛЫ)} из {СЛУЧАЕВ}")
+print(f"пройдено случаев: {СЛУЧАЕВ - len(ПРОВАЛЫ) - len(ПРОПУЩЕНО)} из {СЛУЧАЕВ}")
+if ПРОПУЩЕНО:
+    print(f"пропущено: {len(ПРОПУЩЕНО)}")
+    for пропуск in ПРОПУЩЕНО:
+        print(f"  ~ {пропуск}")
 if ПРОВАЛЫ:
     print(f"ПРОВАЛЕНО: {len(ПРОВАЛЫ)}")
     for провал in ПРОВАЛЫ:
