@@ -214,6 +214,62 @@ def _запустить_sh(скрипт: Path, корень: Path, данные:
     )
 
 
+def хук_с_входом(скрипт: Path, корень: Path, данные: dict):
+    """Хук правил отдельным процессом: JSON события — во входной поток."""
+    return subprocess.run(
+        [sys.executable, "-X", "utf8", str(скрипт)],
+        input=json.dumps(данные, ensure_ascii=False),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(корень),
+        env=_окружение(корень),
+    )
+
+
+def данные_команды(корень: Path, вызов: str, событие: str) -> dict:
+    """Событие команды оболочки глазами хука: до — PreToolUse, после — PostToolUse."""
+    return {
+        "session_id": "проба",
+        "transcript_path": "",
+        "cwd": str(корень),
+        "hook_event_name": событие,
+        "tool_name": "PowerShell",
+        "tool_input": {"command": "python script.py"},
+        "tool_use_id": вызов,
+    }
+
+
+def проект_ворот(временная: Path) -> Path:
+    """Временный проект с воротами оболочки: код грязный, задача не согласована."""
+    корень = временная / "ворота"
+    (корень / "apps").mkdir(parents=True)
+    (корень / ".reglament" / "hooks").mkdir(parents=True)
+    (корень / "apps" / "a.py").write_text("x = 1\n", encoding="utf-8")
+    for имя in ("gate_edit.py", "gate_shell.py"):
+        shutil.copy2(КОРЕНЬ / "hooks" / имя, корень / ".reglament" / "hooks" / имя)
+    (корень / ".reglament" / "task-state.json").write_text(
+        json.dumps(
+            {
+                "задача": ЗАМЕТКА,
+                "заметка": f"docs/vault/{ЗАМЕТКА}.md",
+                "форма": "полная",
+                "фаза": "заметка",
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    _git(корень, "init", "-q")
+    _git(корень, "config", "core.autocrlf", "false")
+    _git(корень, "add", "-A")
+    _git(корень, "commit", "-q", "-m", "начало")
+    # Файл становится грязным: правка без коммита — как у живой задачи.
+    (корень / "apps" / "a.py").write_text("x = 2\n", encoding="utf-8")
+    return корень
+
+
 def текст(путь: Path) -> str:
     return путь.read_text(encoding="utf-8")
 
@@ -384,6 +440,35 @@ def _():
             return
         assert "не разобран" not in вывод(итог), f"вход хука не разобран: {вывод(итог)}"
         assert вывод(итог).strip(), "хук промолчал: проверка после правки слепа"
+
+
+@случай("ворота оболочки: касание файла правкой не считается (D1)")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = проект_ворот(Path(временная))
+        скрипт = корень / ".reglament" / "hooks" / "gate_shell.py"
+        вызов = "вызов-касание"
+        до = хук_с_входом(скрипт, корень, данные_команды(корень, вызов, "PreToolUse"))
+        assert до.returncode == 0, вывод(до)
+        файл = корень / "apps" / "a.py"
+        момент = файл.stat().st_mtime + 60
+        os.utime(файл, (момент, момент))  # содержимое то же, время изменения новое
+        после = хук_с_входом(скрипт, корень, данные_команды(корень, вызов, "PostToolUse"))
+        assert после.returncode == 0, f"касание файла принято за правку: {вывод(после)}"
+
+
+@случай("ворота оболочки: изменение содержимого команде приписывается")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = проект_ворот(Path(временная))
+        скрипт = корень / ".reglament" / "hooks" / "gate_shell.py"
+        вызов = "вызов-правка"
+        до = хук_с_входом(скрипт, корень, данные_команды(корень, вызов, "PreToolUse"))
+        assert до.returncode == 0, вывод(до)
+        (корень / "apps" / "a.py").write_text("x = 3\n", encoding="utf-8")
+        после = хук_с_входом(скрипт, корень, данные_команды(корень, вызов, "PostToolUse"))
+        assert после.returncode == 2, f"правка не замечена: {вывод(после)}"
+        assert "apps/a.py" in вывод(после), вывод(после)
 
 
 # ── итог ──────────────────────────────────────────────────────────────────
