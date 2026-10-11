@@ -1,7 +1,8 @@
 {
   "name": "@local/dsh-plugin-reglament",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
+  "description": "Сторож регламента: ворота на вызовах инструментов, карточка согласования, возврат хода — один плагин на все проекты",
   "type": "module",
   "exports": {
     ".": "./index.js"
