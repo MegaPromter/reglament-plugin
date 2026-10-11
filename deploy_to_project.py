@@ -52,6 +52,7 @@ for _поток in (sys.stdout, sys.stderr):
         ".dsh/plugin-reglament",
         (
             "approval.js",
+            "board-log.js",
             "canary.js",
             "canary.mjs",
             "card-guard.js",
@@ -68,6 +69,7 @@ for _поток in (sys.stdout, sys.stderr):
         "tools",
         ".dsh/tools",
         (
+            "board_check.py",
             "close_task.py",
             "git_commit.py",
             "journal_report.py",

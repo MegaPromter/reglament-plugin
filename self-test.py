@@ -16,6 +16,7 @@
 """
 
 import ast
+import hashlib
 import json
 import os
 import shutil
@@ -610,6 +611,76 @@ def _():
         except SyntaxError as ошибка:
             беды.append(f"{файл.name}: {ошибка}")
     assert not беды, f"файлы комплекта не разбираются: {беды}"
+
+
+def инструмент(имя: str, корень: Path, *аргументы: str):
+    """Инструмент комплекта отдельным процессом; корень — переменной среды."""
+    return subprocess.run(
+        [sys.executable, "-X", "utf8", str(КОРЕНЬ / "tools" / имя), *аргументы],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(корень),
+        env=_окружение(корень),
+    )
+
+
+def проект_табло(временная: Path, фаза: str, статус: str, отпечаток: str = "") -> Path:
+    """Временный проект с табло и заметкой — для проверки табло против реальности."""
+    корень = временная / "проект"
+    (корень / ".reglament").mkdir(parents=True)
+    (корень / "docs" / "vault").mkdir(parents=True)
+    (корень / "docs" / "vault" / "Проба.md").write_text(
+        f"---\nтип: задача\nстатус: {статус}\n---\n\n# Проба\n", encoding="utf-8"
+    )
+    табло = {
+        "задача": "Проба",
+        "заметка": "docs/vault/Проба.md",
+        "форма": "полная",
+        "фаза": фаза,
+    }
+    if отпечаток:
+        табло["одобрено"] = True
+        табло["одобрено_заметкой"] = отпечаток
+    (корень / ".reglament" / "task-state.json").write_text(
+        json.dumps(табло, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    _git(корень, "init", "-q")
+    _git(корень, "config", "core.autocrlf", "false")
+    _git(корень, "add", "-A")
+    _git(корень, "commit", "-q", "-m", "начало")
+    return корень
+
+
+@случай("табло против реальности: фаза «код», статус «запланировано» — расхождение")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = проект_табло(Path(временная), фаза="код", статус="запланировано")
+        итог = инструмент("board_check.py", корень)
+        assert итог.returncode == 1, f"расхождение не названо: {вывод(итог)}"
+        assert "статус заметки" in вывод(итог), вывод(итог)
+
+
+@случай("табло против реальности: фаза «код», статус «в работе» — сходится")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = проект_табло(Path(временная), фаза="код", статус="в работе")
+        итог = инструмент("board_check.py", корень)
+        assert итог.returncode == 0, f"ложное расхождение: {вывод(итог)}"
+        assert "Табло сходится" in вывод(итог), вывод(итог)
+
+
+@случай("табло против реальности: заметка изменилась после согласования")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        прежний = hashlib.sha1("прежний текст".encode("utf-8")).hexdigest()
+        корень = проект_табло(
+            Path(временная), фаза="код", статус="в работе", отпечаток=прежний
+        )
+        итог = инструмент("board_check.py", корень)
+        assert итог.returncode == 0, f"это предупреждение, а не нарушение: {вывод(итог)}"
+        assert "изменилась после согласования" in вывод(итог), вывод(итог)
 
 
 # ── итог ──────────────────────────────────────────────────────────────────
