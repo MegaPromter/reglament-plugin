@@ -19,6 +19,7 @@ import ast
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -895,6 +896,85 @@ def _():
         assert коммитов(корень) == было_коммитов, "при сбое появился коммит"
         после = json.loads(текст(корень / ".reglament" / "task-state.json"))
         assert "vault" in str(после.get("ждёт", "")), "отказ не оставил «ждёт»"
+
+
+@случай("реестр отказов: у каждого дефекта есть мера, у каждой меры — дефект")
+def _():
+    документ = КОРЕНЬ / "reglament-upravleniya.md"
+    assert документ.is_file(), f"нет реестра: {документ}"
+    текст = документ.read_text(encoding="utf-8")
+    дефекты = set(re.findall(r"^\|\s*(D\d+)\s*\|", текст, re.M))
+    меры = re.findall(r"^\|\s*(M[\d.]+)\s*\|([^\n]*)$", текст, re.M)
+    assert дефекты, "в реестре не нашлось ни одного дефекта"
+    assert меры, "в реестре не нашлось ни одной меры"
+
+    закрытые: set[str] = set()
+    без_дефекта = []
+    for имя_меры, строка in меры:
+        найдены = set(re.findall(r"\bD\d+\b", строка))
+        if not найдены:
+            без_дефекта.append(имя_меры)
+        закрытые |= найдены
+
+    assert not без_дефекта, f"меры без дефекта-родителя: {без_дефекта}"
+    сироты = sorted(дефекты - закрытые, key=lambda имя: int(имя[1:]))
+    assert not сироты, f"дефекты без меры: {сироты}"
+
+
+@случай("бюджет шума: частые отказы — повод переделать ворота")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        журнал = Path(временная) / "журнал.log"
+        строки = [
+            f"2026-10-11T00:00:{номер:02d}Z | хук .reglament/hooks/gate_edit.py: код 0"
+            for номер in range(10)
+        ]
+        строки += [
+            f"2026-10-11T00:01:{номер:02d}Z | ЗАПРЕТ (gate_edit.py): правка до согласования"
+            for номер in range(5)
+        ]
+        журнал.write_text("\n".join(строки) + "\n", encoding="utf-8")
+        итог = subprocess.run(
+            [
+                sys.executable,
+                "-X",
+                "utf8",
+                str(КОРЕНЬ / "tools" / "journal_report.py"),
+                "--журнал",
+                str(журнал),
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        assert "Шум выше бюджета" in итог.stdout, итог.stdout
+        assert "ПЕРЕДЕЛАТЬ ворота" in итог.stdout, итог.stdout
+
+
+@случай("проверяющий проход назван в табло — измеритель его видит")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = проект_табло(Path(временная), фаза="тесты", статус="в работе")
+        табло = json.loads(текст(корень / ".reglament" / "task-state.json"))
+        табло["проверяющий"] = {
+            "когда": "2026-10-11T14:00:00+03:00",
+            "кто": "отдельный проход",
+            "вердикт": "сходится",
+        }
+        (корень / ".reglament" / "task-state.json").write_text(
+            json.dumps(табло, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        итог = инструмент("board_check.py", корень)
+        assert "проверяющий проход: сходится" in вывод(итог), вывод(итог)
+
+
+@случай("без проверяющего прохода измеритель говорит об этом")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = проект_табло(Path(временная), фаза="тесты", статус="в работе")
+        итог = инструмент("board_check.py", корень)
+        assert "проверяющего прохода нет" in вывод(итог), вывод(итог)
 
 
 # ── итог ──────────────────────────────────────────────────────────────────
