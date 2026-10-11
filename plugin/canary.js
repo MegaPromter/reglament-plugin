@@ -29,7 +29,17 @@ export function сделатьВременныйПроект() {
   const папка = путь.join(tmpdir(), `dsh-canary-${Date.now()}`);
   mkdirSync(путь.join(папка, '.reglament'), { recursive: true });
   mkdirSync(путь.join(папка, 'apps'), { recursive: true });
+  mkdirSync(путь.join(папка, 'docs', 'vault'), { recursive: true });
   writeFileSync(путь.join(папка, 'apps', 'canary.py'), 'x = 1\n', 'utf8');
+  // Файлы с заведомой ошибкой — для канареек проверок после правки.
+  writeFileSync(путь.join(папка, 'apps', 'сломанный.py'), 'def f(:\n', 'utf8');
+  writeFileSync(путь.join(папка, 'apps', 'сломанный.js'), 'function f( {\n', 'utf8');
+  // Заметка со статусом не из словаря — для канарейки валидатора vault.
+  writeFileSync(
+    путь.join(папка, 'docs', 'vault', 'Проба.md'),
+    '---\nтип: задача\nстатус: не из словаря\n---\n\n# Проба\n',
+    'utf8',
+  );
   return папка;
 }
 
@@ -82,6 +92,39 @@ export function канарейки(папка) {
         hook_event_name: 'PreToolUse',
         tool_name: 'PowerShell',
         tool_input: { command: 'echo канарейка' },
+      },
+    },
+    {
+      имя: 'validate_vault кусает испорченный vault',
+      скрипт: '.reglament/hooks/validate_vault.py',
+      тип: 'py',
+      табло: ТАБЛО_ПУСТОЕ, // валидатору табло не нужно — он смотрит vault
+      ожидаемыйКод: 1,
+      payload: {},
+    },
+    {
+      имя: 'post-edit-python замечает ошибку в правке',
+      скрипт: '.reglament/hooks/post-edit-python.sh',
+      тип: 'sh',
+      табло: ТАБЛО_ПУСТОЕ,
+      // Замечание отдаётся кодом 2: иначе мост ДСХ его не покажет.
+      ожидаемыйКод: 2,
+      payload: {
+        hook_event_name: 'PostToolUse',
+        tool_name: 'Write',
+        tool_input: { file_path: путь.join(папка, 'apps', 'сломанный.py') },
+      },
+    },
+    {
+      имя: 'post-edit-js замечает ошибку в правке',
+      скрипт: '.reglament/hooks/post-edit-js.sh',
+      тип: 'sh',
+      табло: ТАБЛО_ПУСТОЕ,
+      ожидаемыйКод: 2,
+      payload: {
+        hook_event_name: 'PostToolUse',
+        tool_name: 'Write',
+        tool_input: { file_path: путь.join(папка, 'apps', 'сломанный.js') },
       },
     },
   ];

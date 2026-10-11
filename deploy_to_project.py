@@ -69,6 +69,7 @@ for _поток in (sys.stdout, sys.stderr):
         (
             "close_task.py",
             "git_commit.py",
+            "journal_report.py",
             "memory_check.py",
             "pre_commit_cache.py",
             "preset_patch.py",

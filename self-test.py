@@ -471,6 +471,51 @@ def _():
         assert "apps/a.py" in вывод(после), вывод(после)
 
 
+@случай("валидатор vault слушает REGLAMENT_PROJECT_DIR: канарейка возможна")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = Path(временная)
+        (корень / "docs" / "vault").mkdir(parents=True)
+        (корень / "docs" / "vault" / "Проба.md").write_text(
+            "---\nтип: задача\nстатус: не из словаря\n---\n\n# Проба\n",
+            encoding="utf-8",
+        )
+        итог = хук_с_входом(КОРЕНЬ / "hooks" / "validate_vault.py", корень, {})
+        assert итог.returncode == 1, f"валидатор не кусает чужой vault: {вывод(итог)}"
+        assert "не из словаря" in вывод(итог), вывод(итог)
+
+
+@случай("сводка журнала считает слепые ворота, запреты и возвраты")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        журнал = Path(временная) / "журнал.log"
+        журнал.write_text(
+            "2026-10-11T00:00:00Z | СЛЕПО — node (проверка JS): код 1\n"
+            "2026-10-11T00:00:01Z | ЗАПРЕТ (gate_edit.py): правка до согласования\n"
+            "2026-10-11T00:00:02Z | ход возвращён: повтор 1 из 2\n"
+            "2026-10-11T00:00:03Z | ок — корень сторожа\n",
+            encoding="utf-8",
+        )
+        итог = subprocess.run(
+            [
+                sys.executable,
+                "-X",
+                "utf8",
+                str(КОРЕНЬ / "tools" / "journal_report.py"),
+                "--журнал",
+                str(журнал),
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        assert итог.returncode == 1, f"тревожное не замечено: {вывод(итог)}"
+        assert "запреты: 1" in итог.stdout, итог.stdout
+        assert "возвраты хода: 1" in итог.stdout, итог.stdout
+        assert "инструмент слеп: 1" in итог.stdout, итог.stdout
+
+
 # ── итог ──────────────────────────────────────────────────────────────────
 
 print(f"пройдено случаев: {СЛУЧАЕВ - len(ПРОВАЛЫ) - len(ПРОПУЩЕНО)} из {СЛУЧАЕВ}")

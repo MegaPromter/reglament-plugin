@@ -26,6 +26,7 @@
 автоген (тип: автоген).
 """
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -36,7 +37,13 @@ for _поток in (sys.stdout, sys.stderr):
     if hasattr(_поток, "reconfigure"):
         _поток.reconfigure(encoding="utf-8")
 
-КОРЕНЬ = Path(__file__).resolve().parents[2]
+# Корень — как у соседних хуков (gate_edit, check_commit): сначала переменная
+# среды, потом место файла. Иначе валидатор жёстко смотрел бы только в свой
+# проект, и канарейка сторожа не смогла бы проверить, что он кусает: она гоняет
+# хуки во временном проекте.
+КОРЕНЬ = Path(
+    os.environ.get("REGLAMENT_PROJECT_DIR") or Path(__file__).resolve().parents[2]
+)
 VAULT = КОРЕНЬ / "docs" / "vault"
 
 ТИПЫ_ЗАДАЧ = {"задача", "баг", "техдолг"}

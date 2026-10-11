@@ -26,7 +26,7 @@ import {
 import { ВАРИАНТ_СОГЛАСИЯ, найтиСогласие, разобратьОтвет, штампСогласования } from './approval.js';
 import { ТЕКСТ_ОТКАЗА, карточкаСогласования, проектПоказан, учётПоказа } from './card-guard.js';
 import { учётВозвратов } from './stop-guard.js';
-import { инструментыПроверок, проверитьBash, проверитьИнструмент, проверитьИнструменты, проверитьКорень, прогнатьКанарейку } from './canary.js';
+import { инструментыПроверок, канарейки, проверитьBash, проверитьИнструмент, проверитьИнструменты, проверитьКорень, прогнатьКанарейку } from './canary.js';
 
 let пройдено = 0;
 const провалы = [];
@@ -241,6 +241,9 @@ const вопросы = [{ id: 'ok', question: `Согласовать замет
   const итог = прогнатьКанарейку({
     корень: 'D:/проект',
     запустить: (о) => {
+      const скрипт = String(о.скрипт);
+      if (скрипт.endsWith('validate_vault.py')) return { код: 1, stdout: '', stderr: '' };
+      if (скрипт.endsWith('.sh')) return { код: 2, stdout: '', stderr: '' };
       const команда = String(о.payload?.tool_input?.command ?? '');
       if (!команда) return { код: 2, stdout: '', stderr: '' }; // gate_edit
       if (команда.includes('git commit')) return { код: 2, stdout: '', stderr: '' };
@@ -249,13 +252,31 @@ const вопросы = [{ id: 'ok', question: `Согласовать замет
   });
   assert.deepEqual(итог.слепых, []);
 });
+случай('канарейка берёт все барьеры, а не только ворота перед вызовом', () => {
+  const имена = канарейки('D:/временный').map((к) => к.скрипт);
+  for (const нужный of [
+    '.reglament/hooks/gate_edit.py',
+    '.reglament/hooks/check_commit.py',
+    '.reglament/hooks/gate_shell.py',
+    '.reglament/hooks/validate_vault.py',
+    '.reglament/hooks/post-edit-python.sh',
+    '.reglament/hooks/post-edit-js.sh',
+  ]) {
+    assert.ok(имена.includes(нужный), `в канарейке нет барьера: ${нужный}`);
+  }
+});
 случай('канарейка замечает ослепшие ворота', () => {
   // Хуки отвечают «пропуск» на заведомо плохой вход — значит вход не понят.
   const итог = прогнатьКанарейку({
     корень: 'D:/проект',
     запустить: () => ({ код: 0, stdout: '', stderr: '' }),
   });
-  assert.equal(итог.слепых.length, 2, 'слепыми должны оказаться gate_edit и check_commit');
+  // gate_shell на «до команды» ждёт код 0 — он в счёт слепых не идёт.
+  assert.equal(
+    итог.слепых.length,
+    5,
+    'слепыми должны оказаться пять барьеров: gate_edit, check_commit, validate_vault и две проверки после правки',
+  );
 });
 случай('канарейка bash замечает неработающий bash', () => {
   const итог = проверитьBash({
