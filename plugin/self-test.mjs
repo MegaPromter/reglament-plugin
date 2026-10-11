@@ -8,7 +8,7 @@
 // Сами правила живут в `.reglament/hooks/*` и здесь не дублируются.
 
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import путь from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -821,6 +821,58 @@ const вопросы = [{ id: 'ok', question: `Согласовать замет
   assert.equal(воротаВыключены(настройки, '.reglament/hooks/post-edit-js.sh'), true);
   assert.equal(воротаВыключены(настройки, '.reglament/hooks/check_commit.py'), false);
   assert.equal(воротаВыключены({}, '.reglament/hooks/check_commit.py'), false);
+});
+
+// ── звенья сторожа: код живёт здесь, и проверки едут вместе с ним ────────────
+//
+// Раньше эти проверки стояли в страже ПРИЗМЫ и читали развёрнутую копию плагина.
+// Плагин переехал в дом ДСХ (заметка «Сторож регламента — один плагин на все
+// проекты»), а проверки звеньев переехали вместе с кодом: пропадёт звено — ход
+// снова начнёт заканчиваться молча или карточку можно будет задать без показанного
+// проекта, и это будет выглядеть как «ассистент забыл процедуру», а не как поломка.
+
+function текстРядом(имя) {
+  return readFileSync(путь.join(ГДЕ_Я, имя), 'utf8');
+}
+
+function проверитьЗвенья(файлы) {
+  for (const [имя, звенья] of Object.entries(файлы)) {
+    const текст = текстРядом(имя);
+    const пропали = звенья.filter((звено) => !текст.includes(звено));
+    assert.deepEqual(пропали, [], `${имя}: пропали звенья ${пропали}`);
+  }
+}
+
+случай('сторож возвращает ход: звенья на месте', () => {
+  проверитьЗвенья({
+    'index.js': ['agent/turn-stopping', 'agent.steer', 'session/event'],
+    'hooks-bridge.js': ['check_turn_end.py', 'stop_hook_active', 'last_assistant_message'],
+  });
+});
+
+случай('ворота карточки согласования: звенья на месте', () => {
+  проверитьЗвенья({
+    'index.js': ['card-guard.js', 'карточкаСогласования', 'показ.показан', 'ТЕКСТ_ОТКАЗА'],
+    'card-guard.js': ['карточкаСогласования', 'проектПоказан', 'учётПоказа', 'ТЕКСТ_ОТКАЗА'],
+  });
+});
+
+случай('слой пакета объявляет пресет сторожа', () => {
+  const текст = текстРядом('cordis.patch.yml');
+  const звенья = [
+    'preset-reglament',
+    'id: plugin-reglament',
+    '@local/dsh-plugin-reglament',
+    'default: reglament',
+  ];
+  const пропали = звенья.filter((звено) => !текст.includes(звено));
+  assert.deepEqual(пропали, [], `в слое пакета пропали звенья: ${пропали}`);
+  assert.ok(!текст.includes('preset-standard'), 'слой переписывает чужой пресет standard');
+  assert.ok(
+    !текст.includes('!!js'),
+    'в слое появился тег !!js — его не разбирает проверка YAML; ' +
+      'выражения пишутся инертной формой __jsExpr',
+  );
 });
 
 // ── итог ─────────────────────────────────────────────────────────────────────
