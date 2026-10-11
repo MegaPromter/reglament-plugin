@@ -61,6 +61,7 @@ for _поток in (sys.stdout, sys.stderr):
             "cordis.patch.yml",
             "index.js",
             "package.json",
+            "project.js",
             "self-test.mjs",
             "stop-guard.js",
         ),
