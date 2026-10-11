@@ -34,6 +34,10 @@ export function сделатьВременныйПроект() {
   // Файлы с заведомой ошибкой — для канареек проверок после правки.
   writeFileSync(путь.join(папка, 'apps', 'сломанный.py'), 'def f(:\n', 'utf8');
   writeFileSync(путь.join(папка, 'apps', 'сломанный.js'), 'function f( {\n', 'utf8');
+  // Целый JS рядом с целым `canary.py`: проверка после правки обязана на них
+  // молчать. Без этого случая хук, который «кусает» всегда, читается как живой
+  // (порча 11.10.2026: кириллическое имя переменной делало условие вечно истинным).
+  writeFileSync(путь.join(папка, 'apps', 'canary-ok.js'), 'const x = 1;\n', 'utf8');
   // Заметка со статусом не из словаря — для канарейки валидатора vault.
   writeFileSync(
     путь.join(папка, 'docs', 'vault', 'Проба.md'),
@@ -125,6 +129,32 @@ export function канарейки(папка) {
         hook_event_name: 'PostToolUse',
         tool_name: 'Write',
         tool_input: { file_path: путь.join(папка, 'apps', 'сломанный.js') },
+      },
+    },
+    {
+      имя: 'post-edit-python молчит на целой правке',
+      скрипт: '.reglament/hooks/post-edit-python.sh',
+      тип: 'sh',
+      табло: ТАБЛО_ПУСТОЕ,
+      // Целый файл — замечаний нет. Иначе хук, который «кусает» всегда, выглядит
+      // как живой: ровно так канарейка пропустила порчу 11.10.2026.
+      ожидаемыйКод: 0,
+      payload: {
+        hook_event_name: 'PostToolUse',
+        tool_name: 'Write',
+        tool_input: { file_path: путь.join(папка, 'apps', 'canary.py') },
+      },
+    },
+    {
+      имя: 'post-edit-js молчит на целой правке',
+      скрипт: '.reglament/hooks/post-edit-js.sh',
+      тип: 'sh',
+      табло: ТАБЛО_ПУСТОЕ,
+      ожидаемыйКод: 0,
+      payload: {
+        hook_event_name: 'PostToolUse',
+        tool_name: 'Write',
+        tool_input: { file_path: путь.join(папка, 'apps', 'canary-ok.js') },
       },
     },
   ];

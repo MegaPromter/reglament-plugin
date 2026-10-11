@@ -397,7 +397,12 @@ const вопросы = [{ id: 'ok', question: `Согласовать замет
     запустить: (о) => {
       const скрипт = String(о.скрипт);
       if (скрипт.endsWith('validate_vault.py')) return { код: 1, stdout: '', stderr: '' };
-      if (скрипт.endsWith('.sh')) return { код: 2, stdout: '', stderr: '' };
+      if (скрипт.endsWith('.sh')) {
+        // Целая правка — молчание (код 0), сломанная — замечание (код 2).
+        const файл = String(о.payload?.tool_input?.file_path ?? '');
+        const целый = файл.endsWith('canary.py') || файл.endsWith('canary-ok.js');
+        return { код: целый ? 0 : 2, stdout: '', stderr: '' };
+      }
       const команда = String(о.payload?.tool_input?.command ?? '');
       if (!команда) return { код: 2, stdout: '', stderr: '' }; // gate_edit
       if (команда.includes('git commit')) return { код: 2, stdout: '', stderr: '' };
@@ -418,6 +423,12 @@ const вопросы = [{ id: 'ok', question: `Согласовать замет
   ]) {
     assert.ok(имена.includes(нужный), `в канарейке нет барьера: ${нужный}`);
   }
+  // Пробы «целый файл молчит»: без них хук, который «кусает» всегда, неотличим
+  // от живого (порча 11.10.2026 — кириллическое имя переменной в post-edit-*.sh).
+  const целые = канарейки('D:/временный').filter(
+    (к) => String(к.скрипт).startsWith('.reglament/hooks/post-edit-') && к.ожидаемыйКод === 0,
+  );
+  assert.equal(целые.length, 2, 'нужны пробы «целая правка молчит» для обоих хуков');
 });
 случай('канарейка замечает ослепшие ворота', () => {
   // Хуки отвечают «пропуск» на заведомо плохой вход — значит вход не понят.
