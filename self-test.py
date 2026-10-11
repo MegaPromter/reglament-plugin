@@ -127,6 +127,10 @@ def проект(временная: Path, форма: str = "полная") -> 
         корень / ".dsh" / "tools" / "pre_commit_cache.py",
     )
     shutil.copy2(
+        КОРЕНЬ / "tools" / "phase_rules.py",
+        корень / ".dsh" / "tools" / "phase_rules.py",
+    )
+    shutil.copy2(
         КОРЕНЬ / "hooks" / "close_task.py",
         корень / ".reglament" / "hooks" / "close_task.py",
     )
@@ -293,14 +297,17 @@ def _():
         корень = проект(Path(временная))
         _manage(корень, МИГРАЦИЯ_НЕ_ПРИМЕНЕНА)
         заметка = корень / "docs" / "vault" / f"{ЗАМЕТКА}.md"
-        было = (текст(заметка), текст(корень / ".reglament" / "task-state.json"), коммитов(корень))
+        было = (текст(заметка), коммитов(корень))
         итог = закрыть(корень)
         assert итог.returncode == 1, f"ждали отказ, код {итог.returncode}: {вывод(итог)}"
         assert "не применены миграции" in вывод(итог), вывод(итог)
         assert "works.0085_pp_plan_blocking" in вывод(итог), вывод(итог)
         assert "manage.py migrate" in вывод(итог), вывод(итог)
-        стало = (текст(заметка), текст(корень / ".reglament" / "task-state.json"), коммитов(корень))
-        assert стало == было, "отказ изменил заметку, табло или сделал коммит"
+        стало = (текст(заметка), коммитов(корень))
+        assert стало == было, "отказ изменил заметку или сделал коммит"
+        после = json.loads(текст(корень / ".reglament" / "task-state.json"))
+        assert "миграции" in str(после.get("ждёт", "")), "отказ не оставил следа «ждёт»"
+        assert после.get("задача") == ЗАМЕТКА, "табло потеряло задачу"
 
 
 @случай("миграции применены: закрытие проходит")
@@ -681,6 +688,69 @@ def _():
         итог = инструмент("board_check.py", корень)
         assert итог.returncode == 0, f"это предупреждение, а не нарушение: {вывод(итог)}"
         assert "изменилась после согласования" in вывод(итог), вывод(итог)
+
+
+@случай("шаг фазы не сделан: закрытие отказывает и пишет «ждёт»")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = проект(Path(временная))
+        _manage(корень, МИГРАЦИИ_ПРИМЕНЕНЫ)
+        табло = json.loads(текст(корень / ".reglament" / "task-state.json"))
+        табло["проверки"] = [
+            {"текст": "первое", "сделано": True},
+            {"текст": "второе", "сделано": False},
+        ]
+        (корень / ".reglament" / "task-state.json").write_text(
+            json.dumps(табло, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        итог = закрыть(корень)
+        assert итог.returncode == 1, f"ждали отказ: {вывод(итог)}"
+        assert "шаг фазы" in вывод(итог), вывод(итог)
+        после = json.loads(текст(корень / ".reglament" / "task-state.json"))
+        assert "шаг фазы" in str(после.get("ждёт", "")), "отказ не оставил «ждёт»"
+
+
+@случай("проверки отмечены: шаг фазы сделан, закрытие проходит")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = проект(Path(временная))
+        _manage(корень, МИГРАЦИИ_ПРИМЕНЕНЫ)
+        табло = json.loads(текст(корень / ".reglament" / "task-state.json"))
+        табло["проверки"] = [{"текст": "первое", "сделано": True}]
+        (корень / ".reglament" / "task-state.json").write_text(
+            json.dumps(табло, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        итог = закрыть(корень)
+        assert итог.returncode == 0, f"ждали закрытие: {вывод(итог)}"
+
+
+@случай("правила фаз: «неизвестно» шаг не ломает, «нет» — ломает")
+def _():
+    sys.path.insert(0, str(КОРЕНЬ / "tools"))
+    import phase_rules  # noqa: PLC0415 — проверяем именно этот модуль
+
+    неизвестно = phase_rules.вердикт(
+        "тесты", {"заметка": phase_rules.ЕСТЬ, "проверки": phase_rules.НЕИЗВЕСТНО}
+    )
+    assert неизвестно["сделан"] is True, "«неизвестно» не должно валить шаг"
+    нет = phase_rules.вердикт(
+        "тесты", {"заметка": phase_rules.ЕСТЬ, "проверки": phase_rules.НЕТ}
+    )
+    assert нет["не_сделано"] == ["проверки"], нет
+    assert phase_rules.вердикт("vault", {})["сделан"] is None
+
+
+@случай("табло против реальности: «ждёт» видно")
+def _():
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as временная:
+        корень = проект_табло(Path(временная), фаза="код", статус="в работе")
+        табло = json.loads(текст(корень / ".reglament" / "task-state.json"))
+        табло["ждёт"] = "применить миграции"
+        (корень / ".reglament" / "task-state.json").write_text(
+            json.dumps(табло, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        итог = инструмент("board_check.py", корень)
+        assert "ждёт: применить миграции" in вывод(итог), вывод(итог)
 
 
 # ── итог ──────────────────────────────────────────────────────────────────

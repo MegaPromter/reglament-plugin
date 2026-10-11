@@ -74,6 +74,7 @@ for _поток in (sys.stdout, sys.stderr):
             "git_commit.py",
             "journal_report.py",
             "memory_check.py",
+            "phase_rules.py",
             "pre_commit_cache.py",
             "preset_patch.py",
         ),
