@@ -63,6 +63,7 @@ for _поток in (sys.stdout, sys.stderr):
             "package.json",
             "project.js",
             "self-test.mjs",
+            "settings.js",
             "stop-guard.js",
         ),
     ),
