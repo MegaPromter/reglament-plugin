@@ -98,7 +98,9 @@ def шум_выше_бюджета(числа: dict[str, int]) -> list[str]:
 
 def main() -> int:
     разбор = argparse.ArgumentParser(description="отчёт по журналу сторожа")
-    разбор.add_argument("--журнал", default=str(ЖУРНАЛ_ПО_УМОЛЧАНИЮ), help="файл журнала")
+    разбор.add_argument(
+        "--журнал", default=str(ЖУРНАЛ_ПО_УМОЛЧАНИЮ), help="файл журнала"
+    )
     разбор.add_argument(
         "--строк", type=int, default=0, help="смотреть только последние N строк"
     )

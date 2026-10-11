@@ -152,7 +152,9 @@ export function решениеПоХуку({ код, stderr = '', stdout = '', �
     };
   }
   if (код !== 0 && строго) {
-    const хвост = String(stderr || stdout || '').trim().slice(0, 300);
+    const хвост = String(stderr || stdout || '')
+      .trim()
+      .slice(0, 300);
     return {
       блок: true,
       сбой: true,

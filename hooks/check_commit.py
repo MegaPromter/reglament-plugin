@@ -179,7 +179,10 @@ def неясная_цель(команда):
             for j in range(i + 1, len(токены)):
                 ключ = токены[j]
                 значение = ""
-                if "=" in ключ and ключ.split("=", 1)[0] in ("--git-dir", "--work-tree"):
+                if "=" in ключ and ключ.split("=", 1)[0] in (
+                    "--git-dir",
+                    "--work-tree",
+                ):
                     ключ, значение = ключ.split("=", 1)
                 elif ключ in ключи:
                     значение = токены[j + 1] if j + 1 < len(токены) else ""

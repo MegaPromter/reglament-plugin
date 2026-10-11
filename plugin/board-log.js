@@ -26,7 +26,9 @@ export function моментСейчас(дата = new Date()) {
 
 /** Отпечаток текста: по нему видно, менялся ли он после согласования. */
 export function отпечатокТекста(текст) {
-  return createHash('sha1').update(String(текст ?? ''), 'utf8').digest('hex');
+  return createHash('sha1')
+    .update(String(текст ?? ''), 'utf8')
+    .digest('hex');
 }
 
 /**
