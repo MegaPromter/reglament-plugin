@@ -56,6 +56,7 @@ for _поток in (sys.stdout, sys.stderr):
             "canary.mjs",
             "card-guard.js",
             "hooks-bridge.js",
+            "hooks-map.js",
             "cordis.patch.yml",
             "index.js",
             "package.json",

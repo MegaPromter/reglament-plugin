@@ -8,6 +8,11 @@
 // Сами правила живут в `.reglament/hooks/*` и здесь не дублируются.
 
 import assert from 'node:assert/strict';
+import { existsSync, readdirSync } from 'node:fs';
+import путь from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { ВОРОТА_ОСТАНОВКИ, ВОРОТА_ПЕРЕД, ВОРОТА_ПОСЛЕ, ЗОВУТ_НЕ_ВОРОТА } from './hooks-map.js';
 
 import {
   ИМЯ_ИНСТРУМЕНТА,
@@ -173,6 +178,45 @@ function случай(имя, проверка) {
 });
 случай('после правки .md — проверок нет', () => {
   assert.deepEqual(хукиПослеВызова('write', { file_path: 'DSH_NOTES.md' }), []);
+});
+
+const ГДЕ_Я = путь.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Папка хуков: в исходниках комплекта она рядом с плагином, в развёрнутом
+ * проекте — в `.reglament`. Раскладок две, и путь нельзя подразумевать.
+ */
+function папкаХуков() {
+  const варианты = [
+    путь.join(ГДЕ_Я, '..', 'hooks'),
+    путь.join(ГДЕ_Я, '..', '..', '.reglament', 'hooks'),
+  ];
+  return варианты.find((вариант) => existsSync(вариант)) ?? null;
+}
+
+случай('каждый хук либо в карте ворот, либо назван «зовут не ворота»', () => {
+  const папка = папкаХуков();
+  assert.ok(папка, 'не нашёл папку хуков — раскладка не та');
+  const вКарте = new Set([
+    ...Object.values(ВОРОТА_ПЕРЕД).flat(),
+    ...Object.values(ВОРОТА_ПОСЛЕ).flatMap((описание) => [
+      ...(описание.постоянные ?? []),
+      ...Object.values(описание.по_суффиксу ?? {}).flat(),
+    ]),
+    ...ВОРОТА_ОСТАНОВКИ,
+  ]);
+  const файлы = readdirSync(папка).filter((имя) => /\.(py|sh)$/.test(имя));
+  const забытые = файлы.filter(
+    (имя) => !вКарте.has(имя) && !Object.hasOwn(ЗОВУТ_НЕ_ВОРОТА, имя),
+  );
+  assert.deepEqual(забытые, [], `хуки не в карте и не названы исключениями: ${забытые}`);
+});
+
+случай('исключения карты не разрастаются молча', () => {
+  assert.deepEqual(Object.keys(ЗОВУТ_НЕ_ВОРОТА).sort(), [
+    'close_task.py',
+    'validate_vault.py',
+  ]);
 });
 
 // ── перевод ответа хука в решение ───────────────────────────────────────────
